@@ -1,0 +1,14 @@
+{
+  "name": "dpd-notify",
+  "version": "1.0.0",
+  "description": "dpd android and apple push notification",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eric Fong <ericff@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "node-gcm": "^0.9.12"
+  }
+}
