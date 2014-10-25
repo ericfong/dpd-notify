@@ -10,5 +10,22 @@
   "license": "ISC",
   "dependencies": {
     "node-gcm": "^0.9.12"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ericfong/dpd-notify.git"
+  },
+  "keywords": [
+    "dpd",
+    "notify",
+    "gcm",
+    "android",
+    "push",
+    "notification"
+  ],
+  "bugs": {
+    "url": "https://github.com/ericfong/dpd-notify/issues"
+  },
+  "homepage": "https://github.com/ericfong/dpd-notify"
 }
