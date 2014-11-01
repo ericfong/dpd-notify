@@ -27,9 +27,13 @@ Notify.basicDashboard = {
         type        : 'checkbox',
         description : 'Only allow root or internal scripts to send email'
     }, {
-        name        : 'productionOnly',
+        name        : 'developmentDisabled',
         type        : 'checkbox',
-        description : 'If on development mode, print to console instead of sending them'
+        description : 'developmentDisabled'
+    }, {
+        name        : 'stagingDisabled',
+        type        : 'checkbox',
+        description : 'stagingDisabled'
     }]
 };
 
@@ -73,8 +77,15 @@ Notify.prototype.handle = function ( ctx, next ) {
         // },
     });
 
-    if ( that.config.productionOnly && that.options.server.options.env == 'development' ) {
+    var env = that.options.server.options.env;
+    if (
+        (env == 'development' && that.config.developmentDisabled)
+        || (env == 'staging' && that.config.stagingDisabled)
+     ) {
+    //if ( that.config.productionOnly && that.options.server.options.env != 'production' ) {
+        console.log('_______________________________________________');
         console.log('Simulate CGM Notify', gcmMessage, gcmIds);
+        console.log('```````````````````````````````````````````````');
         return ctx.done( null, { message : 'Simulated sending' } );
     }
 
