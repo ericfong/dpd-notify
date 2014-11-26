@@ -23,17 +23,13 @@ Notify.basicDashboard = {
         type        : 'text',
         description : 'Google Cloud Message Sender'
     }, {
-        name        : 'rootOnly',
+        name        : 'rootOrInternalOnly',
         type        : 'checkbox',
         description : 'Only allow root or internal scripts to send email'
     }, {
-        name        : 'developmentDisabled',
+        name        : 'productionOnly',
         type        : 'checkbox',
-        description : 'developmentDisabled'
-    }, {
-        name        : 'stagingDisabled',
-        type        : 'checkbox',
-        description : 'stagingDisabled'
+        description : 'If on development mode, print emails to console instead of sending them'
     }]
 };
 
@@ -43,13 +39,14 @@ Notify.prototype.handle = function ( ctx, next ) {
         return next();
     }
 
-    if ( this.config.rootOnly && (!ctx.req.internal && !ctx.req.isRoot) ) {
+    if ( this.config.rootOrInternalOnly && (!ctx.req.internal && !ctx.req.isRoot) ) {
         return ctx.done({ statusCode: 403, message: 'Forbidden' });
     }
 
     var message = ctx.body || {};
     var gcmIds = message.gcmIds;
     delete message.gcmIds;
+    // TODO: add apnIds later
 
     var errors = {};
     if (!gcmIds || gcmIds.length == 0) {
@@ -78,11 +75,7 @@ Notify.prototype.handle = function ( ctx, next ) {
     });
 
     var env = that.options.server.options.env;
-    if (
-        (env == 'development' && that.config.developmentDisabled)
-        || (env == 'staging' && that.config.stagingDisabled)
-     ) {
-    //if ( that.config.productionOnly && that.options.server.options.env != 'production' ) {
+    if (that.config.productionOnly && env != 'production') {
         console.log('_______________________________________________');
         console.log('Simulate CGM Notify', gcmMessage, gcmIds);
         console.log('```````````````````````````````````````````````');
@@ -94,8 +87,6 @@ Notify.prototype.handle = function ( ctx, next ) {
         console.log('>>> sendGcm: ', err, ret);
         ctx.done( err, ret );
     });
-
-
 
 };
 
