@@ -1,23 +1,21 @@
 {
   "name": "dpd-notify",
-  "version": "1.0.1",
-  "description": "dpd android push notification",
+  "version": "1.0.2",
+  "description": "send android push notification in deployd",
+  "author": "Eric Fong <ericff@gmail.com> (http://waatag.com/)",
+  "repository": "ericfong/dpd-twilio",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Eric Fong <ericff@gmail.com>",
-  "license": "ISC",
   "dependencies": {
     "node-gcm": "^0.9.12"
   },
   "devDependencies": {},
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ericfong/dpd-notify.git"
-  },
   "keywords": [
+    "dpdmodule",
     "dpd",
+    "deployd",
     "notify",
     "gcm",
     "android",
