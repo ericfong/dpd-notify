@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "apn": "^1.6.2",
-    "node-gcm": "^0.9.12"
+    "node-gcm": "^0.9.14"
   },
   "devDependencies": {},
   "keywords": [
