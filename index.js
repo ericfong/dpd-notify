@@ -28,8 +28,8 @@ function Notify(name, options) {
     };
   } else {
     apnConfig = {
-      cert: this.config.apnCert && Path.join(configPath, this.config.apnCertDev),
-      key: this.config.apnKey && Path.join(configPath, this.config.apnKeyDev),
+      cert: this.config.apnCertDev && Path.join(configPath, this.config.apnCertDev),
+      key: this.config.apnKeyDev && Path.join(configPath, this.config.apnKeyDev),
       gateway: 'gateway.sandbox.push.apple.com'
     };
   }  
