@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "apn": "^1.6.2",
-    "node-gcm": "^0.9.14"
+    "node-gcm": "^0.9.14",
+    "wait-async": "^1.0.1"
   },
   "devDependencies": {},
   "keywords": [

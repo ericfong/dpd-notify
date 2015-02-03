@@ -8,7 +8,7 @@ var gcm = require('node-gcm');
 var apn = require('apn');
 var _ = require('lodash');
 var debug = require('debug')('dpd-notify');
-
+var Wait = require('wait-async');
 
 
 /**
@@ -16,18 +16,26 @@ var debug = require('debug')('dpd-notify');
 */
 function Notify(name, options) {
   Resource.apply( this, arguments );
-  
   var configPath = options.configPath;
-  var apnCertPath = this.config.apnCert && Path.join(configPath, this.config.apnCert);
-  var apnKeyPath = this.config.apnKey && Path.join(configPath, this.config.apnKey);
   
+  // APN config in different env
+  var apnConfig = null;
+  if (options.server.options.env == 'production') {
+    apnConfig = {
+      cert: this.config.apnCert && Path.join(configPath, this.config.apnCert),
+      key: this.config.apnKey && Path.join(configPath, this.config.apnKey),
+      gateway: 'gateway.push.apple.com'
+    };
+  } else {
+    apnConfig = {
+      cert: this.config.apnCert && Path.join(configPath, this.config.apnCertDev),
+      key: this.config.apnKey && Path.join(configPath, this.config.apnKeyDev),
+      gateway: 'gateway.sandbox.push.apple.com'
+    };
+  }  
   
-  // Create a connection to the apn service using mostly default parameters.
-  var apnConnection = new apn.connection({
-    cert: apnCertPath,
-    key: apnKeyPath,
-    gateway: 'gateway.sandbox.push.apple.com'
-  });
+  // connection to apn service
+  var apnConnection = new apn.connection(apnConfig);
   apnConnection.on('transmitted', function(notification, device) {
     debug("APN: Transmitted to:" + device.token.toString('hex'), notification);
   });
@@ -48,10 +56,10 @@ function Notify(name, options) {
   
   
   var store = this.store = process.server.createStore(this.name + "-feedback");
-  var feedback = new apn.Feedback({
+  var feedback = new apn.Feedback(_.defaults({
     "batchFeedback": true,
     "interval": 300
-  });
+  }, apnConfig));
   feedback.on("feedback", function(devices) {
     devices.forEach(function(item) {
       // Do something with item.device and item.time;
@@ -86,6 +94,14 @@ Notify.basicDashboard = {
     type        : 'text',
     description : 'Apple Push Notification Key path'
   }, {
+    name        : 'apnCertDev',
+    type        : 'text',
+    description : 'Apple Push Notification Dev Cert path'
+  }, {
+    name        : 'apnKeyDev',
+    type        : 'text',
+    description : 'Apple Push Notification Dev Key path'
+  }, {
     name        : 'rootOrInternalOnly',
     type        : 'checkbox',
     description : 'Only allow root or internal scripts to send email'
@@ -116,9 +132,9 @@ Notify.prototype.handle = function ( ctx, next ) {
   
   var body = ctx.body || {};
   var gcmIds = body.gcmIds;
-  var hasGcmIds = _.isEmpty(gcmIds);
+  var hasGcmIds = !_.isEmpty(gcmIds);
   var apnIds = body.apnIds;
-  var hasApnIds = _.isEmpty(apnIds);
+  var hasApnIds = !_.isEmpty(apnIds);
   delete body.gcmIds;
   delete body.apnIds;
   
@@ -182,15 +198,21 @@ Notify.prototype.handle = function ( ctx, next ) {
     return ctx.done( null, { message : 'Simulated sending' } );
   }
   
-
+  
+  var wait = new Wait();
+  var resErr = null;
+  var resResult = {};
+  
   var store = this.store;
   if (gcmMessage) {
     var sender = new gcm.Sender(this.config.gcmSender);
-    sender.send(gcmMessage, gcmIds, 4, function(err, ret){
+    sender.send(gcmMessage, gcmIds, 4, wait(function(err, ret){
+      resResult.gcm = ret;
       // ret = { multicast_id:NUMBER, success: 1, failure: 0, canonical_ids: 0, results: [ { message_id: 'ID' } ] }
       console.log('>>> sendGcm: ', err, ret);
-      ctx.done( err, ret );
       if (err || ret.failure > 0) {
+        resErr = err;
+        
         var time = (new Date()).toISOString();
         for (var i = 0, ii = gcmIds.length; i < ii; i++) {
           var gcmId = gcmIds[i];
@@ -204,17 +226,21 @@ Notify.prototype.handle = function ( ctx, next ) {
             mtime: time,
           }, function(){})      
         }
-      }      
-    });
-  }
+      }
+    }) );
+  } 
   
   if (apnMessage) {
     for (var i = 0, ii = apnIds.length; i < ii; i++) {
-      var destDevice = new apn.Device(apnIds[i]);
+      var destDevice = apnIds[i]; //new apn.Device(apnIds[i]);
       this.apnConnection.pushNotification(apnMessage, destDevice);
     }
+    resResult = {apnSent:apnIds.length};
   }
-  
+
+  wait.then(function(){
+    ctx.done( resErr, resResult );
+  });
 };
 
 

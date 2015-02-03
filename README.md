@@ -2,7 +2,7 @@
 
 ## Description
 
-Send android push notification in deployd
+Send android or iOS push notification in deployd
 
 
 ## Getting started
@@ -26,14 +26,23 @@ For more information about Modules, take a look at [the module page on the deplo
 ## The dpd-notify module
 ### Overview
 
-It is a simple [node-gcm](https://www.npmjs.org/package/node-gcm) wrapper for deployd
+It is a deployd module that wrap [node-gcm](https://www.npmjs.org/package/node-gcm) and [node-apn](https://www.npmjs.com/package/apn)
 
 ### Options/Settings
 
 Require:
 - gcmSender
 
+Optional:
+- apnCert
+- apnKey
+
 Please fill them in using the deployd dashboard config page of this module.
+
+
+### Apple Push Notification Preparing Certificates
+
+[node-apn Preparing Certificates](https://github.com/argon/node-apn/wiki/Preparing-Certificates)
 
 
 ### Usage example
