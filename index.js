@@ -17,7 +17,7 @@ var Wait = require('wait-async');
 function Notify(name, options) {
   Resource.apply( this, arguments );
   var configPath = options.configPath;
-  
+
   // APN config in different env
   var apnConfig = null;
   if (options.server.options.env == 'production') {
@@ -32,8 +32,8 @@ function Notify(name, options) {
       key: this.config.apnKeyDev && Path.join(configPath, this.config.apnKeyDev),
       gateway: 'gateway.sandbox.push.apple.com'
     };
-  }  
-  
+  }
+
   // connection to apn service
   var apnConnection = new apn.connection(apnConfig);
   apnConnection.on('transmitted', function(notification, device) {
@@ -53,8 +53,8 @@ function Notify(name, options) {
   });
   apnConnection.on('socketError', console.error);
   this.apnConnection = apnConnection;
-  
-  
+
+
   var store = this.store = process.server.createStore(this.name + "-feedback");
   var feedback = new apn.Feedback(_.defaults({
     "batchFeedback": true,
@@ -70,10 +70,10 @@ function Notify(name, options) {
         deviceId: item.device,
         time: item.time,
         mtime: (new Date()).toISOString(),
-      }, function(){})      
+      }, function(){})
     });
   });
-  
+
 }
 util.inherits( Notify, Resource );
 
@@ -113,23 +113,23 @@ Notify.basicDashboard = {
 };
 
 Notify.prototype.handle = function ( ctx, next ) {
-  
+
   if ( ctx.req && ctx.req.method == 'GET' ) {
     this.store.find(ctx.query, function(err, result) {
       ctx.done(err, result);
-    })    
+    })
     return;
-  }  
-  
-  
+  }
+
+
   if ( ctx.req && ctx.req.method !== 'POST' ) {
     return next();
   }
-  
+
   if ( this.config.rootOrInternalOnly && (!ctx.req.internal && !ctx.req.isRoot) ) {
     return ctx.done({ statusCode: 403, message: 'Forbidden' });
   }
-  
+
   var body = ctx.body || {};
   var gcmIds = body.gcmIds;
   var hasGcmIds = !_.isEmpty(gcmIds);
@@ -137,7 +137,7 @@ Notify.prototype.handle = function ( ctx, next ) {
   var hasApnIds = !_.isEmpty(apnIds);
   delete body.gcmIds;
   delete body.apnIds;
-  
+
   var errors = {};
   if ( !hasGcmIds && !hasApnIds ) {
     errors.destIds = '\'gcmIds\' or \'apnIds\' is required';
@@ -148,8 +148,8 @@ Notify.prototype.handle = function ( ctx, next ) {
   if ( Object.keys(errors).length ) {
     return ctx.done({ statusCode: 400, errors: errors });
   }
-  
-  
+
+
   var gcmMessage = null;
   if (hasGcmIds) {
     gcmMessage = new gcm.Message({
@@ -165,11 +165,11 @@ Notify.prototype.handle = function ( ctx, next ) {
       // },
     });
   }
-  
-  
+
+
   var apnMessage = null;
   if (hasApnIds) {
-    var apnMessage = new apn.notification();
+    var apnMessage = new apn.notification(_.omit(body, 'title', 'message', 'action'));
     
     if (body.title) apnMessage.setAlertTitle( body.title );
     if (body.message) apnMessage.setAlertText( body.message );
@@ -184,11 +184,11 @@ Notify.prototype.handle = function ( ctx, next ) {
     if (body.urlArgs) apnMessage.setUrlArgs( body.urlArgs );
     //apnMessage.badge = 1;
     //apnMessage.payload = {'data-id': 'Caroline'};
-    
-    apnMessage.trim()      
+
+    apnMessage.trim()
   }
-  
-  
+
+
   var env = this.options.server.options.env;
   if (this.config.productionOnly && env != 'production') {
     console.log('_______________________________________________');
@@ -197,12 +197,12 @@ Notify.prototype.handle = function ( ctx, next ) {
     console.log('```````````````````````````````````````````````');
     return ctx.done( null, { message : 'Simulated sending' } );
   }
-  
-  
+
+
   var wait = new Wait();
   var resErr = null;
   var resResult = {};
-  
+
   var store = this.store;
   if (gcmMessage) {
     var sender = new gcm.Sender(this.config.gcmSender);
@@ -212,7 +212,7 @@ Notify.prototype.handle = function ( ctx, next ) {
       console.log('>>> sendGcm: ', err, ret);
       if (err || ret.failure > 0) {
         resErr = err;
-        
+
         var time = (new Date()).toISOString();
         for (var i = 0, ii = gcmIds.length; i < ii; i++) {
           var gcmId = gcmIds[i];
@@ -224,12 +224,12 @@ Notify.prototype.handle = function ( ctx, next ) {
             result: ret,
             time: time,
             mtime: time,
-          }, function(){})      
+          }, function(){})
         }
       }
     }) );
-  } 
-  
+  }
+
   if (apnMessage) {
     for (var i = 0, ii = apnIds.length; i < ii; i++) {
       var destDevice = apnIds[i]; //new apn.Device(apnIds[i]);
@@ -248,7 +248,7 @@ Notify.prototype.configChanged = function(config, fn) {
   var store = this.store;
   var configPath =  this.options.configPath;
   var name = this.name;
-  
+
   var properties = config && config.properties;
   if(config.id && config.id !== this.name) {
     console.log("rename store")
@@ -259,7 +259,7 @@ Notify.prototype.configChanged = function(config, fn) {
     });
     return;
   }
-  
+
   fn(null);
 };
 
