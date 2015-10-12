@@ -1,6 +1,6 @@
 {
   "name": "dpd-notify",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "send android push notification in deployd",
   "author": "Eric Fong <ericff@gmail.com> (http://waatag.com/)",
   "repository": "ericfong/dpd-twilio",
