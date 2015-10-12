@@ -54,26 +54,26 @@ function Notify(name, options) {
   apnConnection.on('socketError', console.error);
   this.apnConnection = apnConnection;
 
-
-  var store = this.store = process.server.createStore(this.name + "-feedback");
-  var feedback = new apn.Feedback(_.defaults({
-    "batchFeedback": true,
-    "interval": 300
-  }, apnConfig));
-  feedback.on("feedback", function(devices) {
-    devices.forEach(function(item) {
-      // Do something with item.device and item.time;
-      console.log('APN Feedback', item.device, item.time);
-      store.insert({
-        _id: 'APN-'+item.device,
-        network: 'APN',
-        deviceId: item.device,
-        time: item.time,
-        mtime: (new Date()).toISOString(),
-      }, function(){})
+  if (this.config.hasApnFeedback) {
+    var store = this.store = process.server.createStore(this.name + "-feedback");
+    var feedback = new apn.Feedback(_.defaults({
+      "batchFeedback": true,
+      "interval": 300
+    }, apnConfig));
+    feedback.on("feedback", function(devices) {
+      devices.forEach(function(item) {
+        // Do something with item.device and item.time;
+        console.log('APN Feedback', item.device, item.time);
+        store.insert({
+          _id: 'APN-'+item.device,
+          network: 'APN',
+          deviceId: item.device,
+          time: item.time,
+          mtime: (new Date()).toISOString(),
+        }, function(){})
+      });
     });
-  });
-
+  }
 }
 util.inherits( Notify, Resource );
 
@@ -109,6 +109,10 @@ Notify.basicDashboard = {
     name        : 'productionOnly',
     type        : 'checkbox',
     description : 'If on development mode, print emails to console instead of sending them'
+  }, {
+    name        : 'hasApnFeedback',
+    type        : 'checkbox',
+    description : 'setup apn feedback callback'
   }]
 };
 
@@ -170,7 +174,7 @@ Notify.prototype.handle = function ( ctx, next ) {
   var apnMessage = null;
   if (hasApnIds) {
     var apnMessage = new apn.notification(_.omit(body, 'title', 'message', 'action'));
-    
+
     if (body.title) apnMessage.setAlertTitle( body.title );
     if (body.message) apnMessage.setAlertText( body.message );
     if (body.action) apnMessage.setAlertAction( body.action );
